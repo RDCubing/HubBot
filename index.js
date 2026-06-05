@@ -1,18 +1,36 @@
 require("dotenv").config();
 
 const fs = require("fs");
+const express = require("express");
 const {
     Client,
     Collection,
     GatewayIntentBits
 } = require("discord.js");
 
-// Create bot client
+/* -----------------------------
+   EXPRESS (ANTI-SLEEP)
+----------------------------- */
+const app = express();
+
+app.get("/", (req, res) => {
+    res.send("Bot is alive");
+});
+
+app.get("/ping", (req, res) => {
+    res.status(200).send("pong");
+});
+
+/* -----------------------------
+   CREATE BOT CLIENT
+----------------------------- */
 const client = new Client({
     intents: [GatewayIntentBits.Guilds]
 });
 
-// Command storage
+/* -----------------------------
+   COMMAND STORAGE
+----------------------------- */
 client.commands = new Collection();
 
 /* -----------------------------
@@ -141,7 +159,6 @@ client.on("interactionCreate", async interaction => {
         const start = (page - 1) * PAGE_SIZE;
         const items = list.slice(start, start + PAGE_SIZE);
 
-        // ⭐ BOLD TITLES ADDED HERE
         const format = items.map(app =>
             `**${app.Title}**
 ID: ${app.Id}
@@ -182,6 +199,15 @@ Version: ${app.Version}`
             ]
         });
     }
+});
+
+/* -----------------------------
+   START SERVER (RENDER REQUIRED)
+----------------------------- */
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Web server running on port ${PORT}`);
 });
 
 /* -----------------------------
