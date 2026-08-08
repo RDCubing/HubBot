@@ -23,7 +23,17 @@ const HOST = process.env.HOST || "0.0.0.0";
 const app = express();
 
 app.get("/", (req, res) => {
-    res.status(200).send("Bot is alive");
+    res.send(`
+        <html>
+            <head>
+                <title>HubBot</title>
+            </head>
+            <body>
+                <h1>HubBot</h1>
+                <p>Bot is alive.</p>
+            </body>
+        </html>
+    `);
 });
 
 app.get("/ping", (req, res) => {
