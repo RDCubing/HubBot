@@ -3,9 +3,9 @@ const { SlashCommandBuilder } = require("discord.js");
 const PAGE_SIZE = 5;
 
 const formatApp = (app) =>
-    `**${app.Title}**
-ID: ${app.Id || "no-id"}
-Version: ${app.Version}`;
+    `**${app.Title}**\n` +
+    `ID: ${app.Id || "no-id"}\n` +
+    `Version: ${app.Version}`;
 
 function paginate(items, page) {
     const start = (page - 1) * PAGE_SIZE;
@@ -106,7 +106,7 @@ module.exports = {
                     {
                         title: "GeekHub App List",
                         color: 0x2b2d31,
-                        description: items.map(formatApp).join("\n\n"),
+                        description: items.map(formatApp).join("\n"),
                         footer: {
                             text: `Page ${page}/${totalPages} • ${allApps.length} apps`
                         }
@@ -138,7 +138,7 @@ module.exports = {
                     {
                         title: "Top Apps",
                         color: 0x2b2d31,
-                        description: items.map(formatApp).join("\n\n"),
+                        description: items.map(formatApp).join("\n"),
                         footer: {
                             text: `Page ${page}/${totalPages} • ${topApps.length} featured apps`
                         }
