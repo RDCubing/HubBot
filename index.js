@@ -228,7 +228,7 @@ client.on("interactionCreate", async interaction => {
                 `ID: ${app.Id}\n` +
                 `Version: ${app.Version}`
             )
-            .join("\n");
+            .join("\n\n");
 
         return interaction.update({
             embeds: [

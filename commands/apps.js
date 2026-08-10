@@ -106,7 +106,7 @@ module.exports = {
                     {
                         title: "GeekHub App List",
                         color: 0x2b2d31,
-                        description: items.map(formatApp).join("\n"),
+                        description: items.map(formatApp).join("\n\n"),
                         footer: {
                             text: `Page ${page}/${totalPages} • ${allApps.length} apps`
                         }
@@ -138,7 +138,7 @@ module.exports = {
                     {
                         title: "Top Apps",
                         color: 0x2b2d31,
-                        description: items.map(formatApp).join("\n"),
+                        description: items.map(formatApp).join("\n\n"),
                         footer: {
                             text: `Page ${page}/${totalPages} • ${topApps.length} featured apps`
                         }
