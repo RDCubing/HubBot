@@ -18,21 +18,21 @@ module.exports = {
 
         const data = await res.json();
 
-        // Support PrismStore array if structured like the repository JSON
+        // Support PrismStore array or flat object structure
         let app = data.PrismStore ?? data;
         if (Array.isArray(app)) {
             app = app.find(item => item.TopApp === "Yes") || app[0];
         }
 
         const version = app.Version || "Unknown";
-        const title = app.Title || "PrismStore";
-        const description = app.Description || "No description available.";
+        const title = app.Name || app.Title || "PrismStore";
+        const description = (app.Message ? app.Message + "\n\n" : "") + (app.Changelog || app.Description || "No description available.");
         const downloadUrl = app.DownloadUrl || "https://github.com/RDCubing";
 
         return interaction.reply({
             embeds: [
                 {
-                    title: `PrismStore ${version}`,
+                    title: `${title} ${version}`,
                     color: 0x2b2d31,
                     description: description,
 
