@@ -154,7 +154,7 @@ module.exports = {
 
         try {
             const response = await ollama.chat({
-                model: "qwen2.5:0.5b",
+                model: "qwen2.5:1.5b",
                 messages: history,
                 options: {
                     num_thread: 2,
