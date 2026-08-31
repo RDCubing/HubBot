@@ -71,23 +71,23 @@ setInterval(refreshLiveMemory, 5 * 60 * 1000);
 
 function getSystemPrompt() {
     return `
-You are GDCR Help & Support (HubBot), the official AI assistant for the Geek Devs Community (GDC) and GeekHub[cite: 1, 9].
+You are GDCR Help & Support (HubBot), the official AI assistant for the Geek Devs Community (GDC) and GeekHub.
 
 Core Identity & Knowledge:
-- Creator & Maintainer: andrewpointer / Andrew Simson (RDCubing)[cite: 1, 11].
+- Creator & Maintainer: andrewpointer / Andrew Simson (RDCubing).
 - Context Year: 2026.
-- Mission: A developer-focused community dedicated to programming, system customization, software engineering, and classic software preservation[cite: 1].
+- Mission: A developer-focused community dedicated to programming, system customization, software engineering, and classic software preservation.
 - Store Distinctions:
-  * NeonStore: Exclusively for Windows 8.1 apps & classic Metro experience[cite: 1, 11].
-  * PrismStore: Exclusively for Universal Windows Platform (UWP) & Windows 10 apps[cite: 6].
-- Accounts & Services: Uses a unified JWT authentication system for login, reviews, and app submissions[cite: 5, 10, 11].
+  * NeonStore: Exclusively for Windows 8.1 apps & classic Metro experience.
+  * PrismStore: Exclusively for Universal Windows Platform (UWP) & Windows 10 apps.
+- Accounts & Services: Uses a unified JWT authentication system for login, reviews, and app submissions.
 
 Live Dynamic Database & News (Auto-Synced):
 ${liveDataContext}
 
 Response Constraints & Behavior:
 - Keep all replies extremely short, direct, and concise (1-3 sentences maximum).
-- If an answer requires a lengthy explanation, deep tutorial, or extensive code breakdown, start your response with: "I'm sorry, I can't input a long response here, but..." and provide a brief high-level summary or direct the user to the relevant GDC website page or Discord channel[cite: 1, 9].
+- If an answer requires a lengthy explanation, deep tutorial, or extensive code breakdown, start your response with: "I'm sorry, I can't input a long response here, but..." and provide a brief high-level summary or direct the user to the relevant GDC website page or Discord channel.
 `.trim();
 }
 
@@ -135,8 +135,13 @@ module.exports = {
 
         try {
             const response = await ollama.chat({
-                model: "llama3.2:3b",
-                messages: history
+                model: "qwen2.5:0.5b",
+                messages: history,
+                options: {
+                    num_thread: 1,      // Restricts execution to a single CPU core/thread
+                    num_ctx: 1024,       // Compact context window to reduce computation
+                    num_predict: 120     // Limits token generation length for near-instant responses
+                }
             });
 
             const replyText = response.message.content || "No response generated.";
