@@ -92,10 +92,12 @@ Live Dynamic Data (Synced):
 ${liveDataContext}
 
 Strict Output Constraints:
-- Brevity: Keep every reply strictly between 1 to 2 sentences.
-- Directness: Answer immediately without conversational filler (do NOT start with "Sure!", "Hello!", or "As an AI...").
+- Brevity: Keep every reply strictly between 1 to 3 full sentences.
+- Formatting: Do NOT use bullet points, numbered lists, or bold headings; reply in standard sentence paragraphs only so answers finish completely.
+- No Newlines: Do NOT output any line breaks (\n) or multiple paragraphs; return the entire response as a single, continuous line of text.
+- Directness: Answer immediately without conversational filler.
 - Anti-Hallucination: Do not invent download links, features, apps, or staff members that are not in your prompt or dynamic data.
-- Fallback Trigger: If a user asks for code implementation, long tutorials, or multi-step guides, start strictly with: "I'm sorry, I can't input a long response here, but..." and direct them to the GDC Discord or website.
+- Fallback Trigger: If a user asks for code implementation, long tutorials, or multi-step guides, start strictly with: "I'm sorry, I can't input a long response here, but..." and direct them to the GDC Discord or website[cite: 1, 2].
 `.trim();
 }
 
@@ -148,7 +150,7 @@ module.exports = {
                 options: {
                     num_thread: 2,       // Uses 2 CPU threads to prevent latency bottlenecks
                     num_ctx: 1024,        // Small context footprint for quick processing
-                    num_predict: 70       // Strictly caps reply length to 1-2 fast sentences
+                    num_predict: 150       // Strictly caps reply length to 1-2 fast sentences
                 }
             });
 
