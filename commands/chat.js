@@ -4,7 +4,7 @@ const { Ollama } = require("ollama");
 const ollama = new Ollama({ host: "http://127.0.0.1:11434" });
 const userConversations = new Map();
 
-// JSON Endpoints
+// Raw JSON Endpoints
 const URLS = {
     projects: "https://raw.githubusercontent.com/RDCubing/geekhubapi/main/projects.json",
     neonRelease: "https://raw.githubusercontent.com/RDCubing/geekhubapi/main/update.json",
@@ -14,7 +14,7 @@ const URLS = {
 
 let liveDataContext = "";
 
-// Helper to fetch and build dynamic context
+// Dynamic JSON Memory Fetcher
 async function refreshLiveMemory() {
     try {
         const [projectsRes, neonRes, prismRes, newsRes] = await Promise.all([
@@ -26,20 +26,20 @@ async function refreshLiveMemory() {
 
         let contextParts = [];
 
-        // 1. Process App Catalog (Projects)
+        // 1. App Catalog
         if (projectsRes) {
             const apps = Array.isArray(projectsRes)
                 ? projectsRes
                 : Object.values(projectsRes).filter(Array.isArray).flat();
             
-            const appList = apps.slice(0, 10).map(a => 
-                `- ${a.Title || "Unknown"} (v${a.Version || "?"}) by ${a.Publisher || "Unknown"} [${a.Framework || a.Platform || "N/A"}]`
+            const appList = apps.slice(0, 15).map(a => 
+                `- ${a.Title || "Unknown"} (v${a.Version || "?"}) by ${a.Publisher || "Unknown"} [Platform: ${a.Framework || a.Platform || "N/A"}]`
             ).join("\n");
 
-            contextParts.push(`Current WebStore Applications:\n${appList}`);
+            contextParts.push(`Current Live WebStore Applications:\n${appList}`);
         }
 
-        // 2. Process Latest Store Releases
+        // 2. Latest Releases
         if (neonRes) {
             const n = neonRes.NeonStore || (Array.isArray(neonRes) ? neonRes[0] : neonRes);
             contextParts.push(`NeonStore Latest Release: Version ${n.Version || "?"} (${n.Description || ""})`);
@@ -50,13 +50,13 @@ async function refreshLiveMemory() {
             contextParts.push(`PrismStore Latest Release: Version ${p.Version || "?"} (${p.Description || ""})`);
         }
 
-        // 3. Process Latest News
+        // 3. Recent News
         if (newsRes && Array.isArray(newsRes)) {
-            const newsList = newsRes.slice(0, 3).map(n => 
+            const newsList = newsRes.slice(0, 5).map(n => 
                 `- [${n.newsId}] ${n.title} (by ${n.author}): ${n.description}`
             ).join("\n");
 
-            contextParts.push(`Recent GDC News & Updates:\n${newsList}`);
+            contextParts.push(`Recent Community News & Updates:\n${newsList}`);
         }
 
         liveDataContext = contextParts.join("\n\n");
@@ -65,40 +65,51 @@ async function refreshLiveMemory() {
     }
 }
 
-// Initial fetch + periodic background update every 5 minutes
+// Initial fetch + 5-minute background cache refresh
 refreshLiveMemory();
 setInterval(refreshLiveMemory, 5 * 60 * 1000);
 
 function getSystemPrompt() {
     return `
-You are GDCR Help & Support (HubBot), an automated AI assistant bot for Geek Devs Community (GDC) and GeekHub[cite: 1].
+You are GDCR Help & Support (HubBot), the automated AI assistant bot for the Geek Devs Community (GDC) and GeekHub.
 
-Strict Acronym & Name Rules:
-- "GDC" stands EXCLUSIVELY for "Geek Devs Community"[cite: 1].
-- NEVER expand GDC as "Game Developers Conference", "Geometric Data Center", or anything else.
-- You are an AI bot program, NOT a human developer.
-- NEVER say "I created", "my apps", or "I made". GDC, NeonStore, and related projects were created and are maintained by Andrew Simson (andrewpointer / RDCubing)[cite: 1, 2]. Always refer to the creator in the third person[cite: 1, 2].
-- Current Context Year: 2026.
+Core Identity & Persona Rules:
+1. You are an AI assistant bot running inside the GDC Discord community. You are NOT a human developer.
+2. GDC stands EXCLUSIVELY for "Geek Devs Community". It is NEVER "Game Developers Conference" or "Geometric Data Center".
+3. Creator & Staff: GDC was created and is maintained by Andrew Simson (andrewpointer / RDCubing). Other community leaders include Jack (Admin). NEVER say "I created", "my apps", or "I made". Always speak about Andrew and staff in the third person.
+4. Temporal Anchor: The current year is 2026.
+5. Focus: GDC is dedicated to programming, system customization, software engineering, Windows customization tools, and classic Windows UI preservation (NOT gaming industry conferences).
 
-Platform & Store Separation:
-- NeonStore: Exclusively for Windows 8.1 / classic Metro-style applications[cite: 1, 2].
-- PrismStore: Standalone app catalog exclusively for Universal Windows Platform (UWP) and Windows 10 apps[cite: 1].
-- DO NOT confuse them: PrismStore is NOT a feature of NeonStore[cite: 1].
+Complete Project & Platform Ecosystem:
+1. REIMP (Reimplementation Project): Focuses on recreating, modernizing, and researching classic Windows aesthetics, Metro designs, and legacy UI interfaces.
+2. NeonStore:
+   - Developer marketplace inspired by the Windows 8.1 Store Metro UI.
+   - Dedicated exclusively to Windows 8.1 apps, developer showcases, and classic Metro utilities.
+   - Uses the GDC unified account system for submitting applications, submitting star ratings (1-5), and writing reviews.
+3. PrismStore:
+   - Standalone application catalog built specifically for Universal Windows Platform (UWP) and Windows 10 applications.
+   - CRITICAL: PrismStore is its own distinct platform and is NOT a sub-feature or module of NeonStore.
+4. Project Meridian / NeonEdge: A modern reimagining of Microsoft Edge featuring a classic, clean, lightweight Windows 10-era interface.
+5. QuoteTile Lite: A lightweight legacy build of QuoteTile designed for Windows 8.0 RTM devices utilizing HTTP Quotable.
+6. HubBot: The official Discord bot providing automation, community utilities, and local AI support.
 
-Accounts & Infrastructure:
-- Accounts: Unified JWT authentication used across GDC websites, app submissions, and NeonStore reviews[cite: 1, 2].
-- Main Domain: https://gdcr.dankassassin368.com/[cite: 1]
+Infrastructure, Domains & Account System:
+- Main Domain: https://gdcr.dankassassin368.com/
+- GitHub Organization & Pages: https://rdcubing.github.io/ and https://github.com/RDCubing
+- Discord Server: https://discord.gg/YBsVhkcHT4
+- GDC Unified Account System: A shared JWT-based authentication system used across the website, NeonStore, and services. Allows a single login to submit apps at /webstore/uploader/ and review software.
+- App Submission Process: Developers must be signed in with a GDC account and submit app name, category, subtitle, publisher, version, framework/OS, icon URL, screenshot URL, download URL, and description for manual administrator review.
 
-Live Dynamic Data (Synced):
+Live Dynamic JSON Data (Synced):
 ${liveDataContext}
 
 Strict Output Constraints:
-- Brevity: Keep every reply strictly between 1 to 2 full sentences.
-- Formatting: Do NOT use bullet points, numbered lists, or bold headings.
-- No Newlines: Do NOT output line breaks (\\n) or paragraphs; return one single continuous line.
-- Directness: Answer immediately without conversational filler.
-- Anti-Hallucination: Do not invent download links, features, apps, or staff members.
-- Fallback Trigger: If a user asks for code, tutorials, or guides, start strictly with: "I'm sorry, I can't input a long response here, but..." and direct them to the GDC Discord or website[cite: 1].
+- Brevity: Keep every answer concise (1 to 3 sentences maximum).
+- Formatting: Do NOT use bullet points, numbered lists, markdown headers, or asterisks.
+- No Newlines: Do NOT include line breaks (\\n); output your entire response as a single, unbroken line of text.
+- Tone: Helpful, direct, accurate, and completely free of conversational filler (do not start with "Sure", "Hello", or "As an AI").
+- Anti-Hallucination: Do not invent download links, features, or projects not defined above or in the dynamic data.
+- Fallback Trigger: If a user asks for long tutorials, multi-step guides, or extensive code implementations, start strictly with: "I'm sorry, I can't input a long response here, but..." and direct them to the GDC Discord or website.
 `.trim();
 }
 
@@ -126,20 +137,17 @@ module.exports = {
         const shouldReset = interaction.options.getBoolean("reset") || false;
         const userId = interaction.user.id;
 
-        // Initialize or update conversation history with fresh dynamic prompt
         if (shouldReset || !userConversations.has(userId)) {
             userConversations.set(userId, [
                 { role: "system", content: getSystemPrompt() }
             ]);
         } else {
-            // Keep the system prompt updated with the latest live data
             userConversations.get(userId)[0] = { role: "system", content: getSystemPrompt() };
         }
 
         const history = userConversations.get(userId);
         history.push({ role: "user", content: prompt });
 
-        // Maintain bounded context to save VPS RAM
         if (history.length > 9) {
             history.splice(1, 2);
         }
@@ -149,9 +157,9 @@ module.exports = {
                 model: "qwen2.5:0.5b",
                 messages: history,
                 options: {
-                    num_thread: 2,       // Uses 2 CPU threads to prevent latency bottlenecks
-                    num_ctx: 1024,        // Small context footprint for quick processing
-                    num_predict: 150       // Strictly caps reply length to 1-2 fast sentences
+                    num_thread: 2,
+                    num_ctx: 1536,
+                    num_predict: 120
                 }
             });
 
