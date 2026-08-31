@@ -4,14 +4,89 @@ const { Ollama } = require("ollama");
 const ollama = new Ollama({ host: "http://127.0.0.1:11434" });
 const userConversations = new Map();
 
-// Official memory and system prompt
-const BOT_MEMORY = `
-You are GDCR Help & Support, the official AI assistant for the GDCR Community and GeekHub.
-Key knowledge to remember:
-- Creator: andrewpointer.
-- Primary purpose: Assisting users with GeekHub apps, and Store catalogs like NeonStore for 8.1, and PrismStore for UWP/10.
-- Tone: Helpful, clear, and concise. Keep answers short and relevant to Discord.
-`;
+// JSON Endpoints
+const URLS = {
+    projects: "https://raw.githubusercontent.com/RDCubing/geekhubapi/main/projects.json",
+    neonRelease: "https://raw.githubusercontent.com/RDCubing/geekhubapi/main/update.json",
+    prismRelease: "https://raw.githubusercontent.com/RDCubing/geekhubapi/main/updateprism.json",
+    news: "https://raw.githubusercontent.com/RDCubing/gdcr-news-reimp2026/main/news/news.json"
+};
+
+let liveDataContext = "";
+
+// Helper to fetch and build dynamic context
+async function refreshLiveMemory() {
+    try {
+        const [projectsRes, neonRes, prismRes, newsRes] = await Promise.all([
+            fetch(URLS.projects).then(r => r.json()).catch(() => null),
+            fetch(URLS.neonRelease).then(r => r.json()).catch(() => null),
+            fetch(URLS.prismRelease).then(r => r.json()).catch(() => null),
+            fetch(URLS.news).then(r => r.json()).catch(() => null)
+        ]);
+
+        let contextParts = [];
+
+        // 1. Process App Catalog (Projects)
+        if (projectsRes) {
+            const apps = Array.isArray(projectsRes)
+                ? projectsRes
+                : Object.values(projectsRes).filter(Array.isArray).flat();
+            
+            const appList = apps.slice(0, 15).map(a => 
+                `- ${a.Title || "Unknown"} (v${a.Version || "?"}) by ${a.Publisher || "Unknown"} [Platform: ${a.Framework || a.Platform || "N/A"}]`
+            ).join("\n");
+
+            contextParts.push(`Current WebStore Applications:\n${appList}`);
+        }
+
+        // 2. Process Latest Store Releases
+        if (neonRes) {
+            const n = neonRes.NeonStore || (Array.isArray(neonRes) ? neonRes[0] : neonRes);
+            contextParts.push(`NeonStore Latest Release: Version ${n.Version || "?"} (${n.Description || ""})`);
+        }
+
+        if (prismRes) {
+            const p = prismRes.PrismStore || (Array.isArray(prismRes) ? prismRes[0] : prismRes);
+            contextParts.push(`PrismStore Latest Release: Version ${p.Version || "?"} (${p.Description || ""})`);
+        }
+
+        // 3. Process Latest News
+        if (newsRes && Array.isArray(newsRes)) {
+            const newsList = newsRes.slice(0, 5).map(n => 
+                `- [${n.newsId}] ${n.title} (by ${n.author}): ${n.description}`
+            ).join("\n");
+
+            contextParts.push(`Recent GDC News & Updates:\n${newsList}`);
+        }
+
+        liveDataContext = contextParts.join("\n\n");
+    } catch (err) {
+        console.error("Error updating live JSON memory:", err);
+    }
+}
+
+// Initial fetch + periodic background update every 5 minutes
+refreshLiveMemory();
+setInterval(refreshLiveMemory, 5 * 60 * 1000);
+
+function getSystemPrompt() {
+    return `
+You are GDCR Help & Support (HubBot), the official AI assistant for the Geek Devs Community (GDC) and GeekHub.
+
+Core Identity & Knowledge:
+- Creator & Maintainer: andrewpointer / Andrew Simson (RDCubing).
+- Context Year: 2026.
+- Mission: A developer-focused community dedicated to programming, system customization, software engineering, and classic software preservation.
+- Store Distinctions:
+  * NeonStore: Exclusively for Windows 8.1 apps & classic Metro experience.
+  * PrismStore: Exclusively for Universal Windows Platform (UWP) & Windows 10 apps.
+- Accounts & Services: Uses a unified JWT authentication system for login, reviews, and app submissions.
+- Tone: Helpful, clear, accurate, and concise.
+
+Live Dynamic Database & News (Auto-Synced):
+${liveDataContext}
+`.trim();
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -37,17 +112,20 @@ module.exports = {
         const shouldReset = interaction.options.getBoolean("reset") || false;
         const userId = interaction.user.id;
 
-        // Initialize or reset session with your specific knowledge
+        // Initialize or update conversation history with fresh dynamic prompt
         if (shouldReset || !userConversations.has(userId)) {
             userConversations.set(userId, [
-                { role: "system", content: BOT_MEMORY.trim() }
+                { role: "system", content: getSystemPrompt() }
             ]);
+        } else {
+            // Keep the system prompt updated with the latest live data
+            userConversations.get(userId)[0] = { role: "system", content: getSystemPrompt() };
         }
 
         const history = userConversations.get(userId);
         history.push({ role: "user", content: prompt });
 
-        // Maintain bounded context (system prompt + 8 turns) to save VPS RAM
+        // Maintain bounded context to save VPS RAM
         if (history.length > 9) {
             history.splice(1, 2);
         }
